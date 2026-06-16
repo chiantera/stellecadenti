@@ -1,0 +1,5 @@
+# Netlify local link/state
+.netlify/
+
+# Dependencies
+node_modules/
