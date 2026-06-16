@@ -143,6 +143,7 @@
         var angleDeg = rand(0, 360);
         var distance = rand(90, 420);   // px — short darts to long sweeps
         var duration = rand(550, 2400); // ms — fast and slow mixed in
+        var bright = rand(0.3, 1);      // faint and ghostly through to blazing
         var rot = "rotate(" + angleDeg.toFixed(2) + "deg)";
         star.style.transform = rot;
 
@@ -151,8 +152,8 @@
         var anim = star.animate(
           [
             { transform: rot + " translate(0, 0)", opacity: 0 },
-            { opacity: 1, offset: 0.15 },
-            { opacity: 1, offset: 0.7 },
+            { opacity: bright, offset: 0.15 },
+            { opacity: bright, offset: 0.7 },
             { transform: rot + " translate(" + distance + "px, 0)", opacity: 0 }
           ],
           { duration: duration, easing: "ease-out", fill: "forwards" }
