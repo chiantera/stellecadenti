@@ -92,14 +92,21 @@
       }
 
       // --- A single shooting star that crosses a small part of the sky ---
-      function shootStar() {
+      function shootStar(px, py) {
         var star = document.createElement("div");
         star.className = "shooting-star";
 
-        var startX = rand(5, 80);   // vw, leave room to travel right/down
-        var startY = rand(5, 70);   // vh, mostly upper portion
-        star.style.left = startX + "vw";
-        star.style.top = startY + "vh";
+        var x, y;
+        if (px != null && py != null) {
+          // Jitter around the click so it appears "right around there".
+          x = px + rand(-35, 35);
+          y = py + rand(-35, 35);
+        } else {
+          x = rand(0.05, 0.80) * window.innerWidth;  // leave room to travel
+          y = rand(0.05, 0.70) * window.innerHeight;  // mostly upper portion
+        }
+        star.style.left = x + "px";
+        star.style.top = y + "px";
 
         // Short, randomized diagonal travel so it only crosses a small span.
         var distance = rand(120, 220);          // px
@@ -172,7 +179,12 @@
           if (exit) exit.call(doc);
         }
       }
-      document.addEventListener("click", toggleFullscreen);
+      document.addEventListener("click", function (e) {
+        toggleFullscreen();
+        // Send a shooting star around where they clicked, after a short delay.
+        var x = e.clientX, y = e.clientY;
+        setTimeout(function () { shootStar(x, y); }, rand(300, 700));
+      });
 
       createStars(45);
       scheduleNext();
