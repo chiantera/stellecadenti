@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Night Sky</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+
+    #sky {
+      position: fixed;
+      inset: 0;
+    }
+
+    /* Static, sparse stars */
+    .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.5);
+      animation: twinkle var(--dur) ease-in-out infinite;
+      animation-delay: var(--delay);
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: var(--min); }
+      50%      { opacity: var(--max); }
+    }
+
+    /* Shooting stars: a bright head with a short tapered tail */
+    .shooting-star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.8);
+      pointer-events: none;
+    }
+
+    .shooting-star::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      right: 1px;
+      width: 70px;
+      height: 1px;
+      transform: translateY(-50%);
+      background: linear-gradient(to left, rgba(255, 255, 255, 0.85), transparent);
+    }
+  </style>
+</head>
+<body>
+  <div id="sky"></div>
+
+  <script>
+    (function () {
+      "use strict";
+
+      var sky = document.getElementById("sky");
+
+      function rand(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      // --- Sparse field of static, gently twinkling stars ---
+      function createStars(count) {
+        for (var i = 0; i < count; i++) {
+          var s = document.createElement("div");
+          s.className = "star";
+          s.style.left = rand(0, 100) + "%";
+          s.style.top = rand(0, 100) + "%";
+          s.style.setProperty("--dur", rand(3, 7).toFixed(2) + "s");
+          s.style.setProperty("--delay", rand(0, 6).toFixed(2) + "s");
+          s.style.setProperty("--min", rand(0.15, 0.35).toFixed(2));
+          s.style.setProperty("--max", rand(0.6, 0.95).toFixed(2));
+          sky.appendChild(s);
+        }
+      }
+
+      // --- A single shooting star that crosses a small part of the sky ---
+      function shootStar() {
+        var star = document.createElement("div");
+        star.className = "shooting-star";
+
+        var startX = rand(5, 80);   // vw, leave room to travel right/down
+        var startY = rand(5, 70);   // vh, mostly upper portion
+        star.style.left = startX + "vw";
+        star.style.top = startY + "vh";
+
+        // Short, randomized diagonal travel so it only crosses a small span.
+        var distance = rand(120, 220);          // px
+        var angle = rand(15, 45) * Math.PI / 180; // gentle downward-right slope
+        var dx = Math.cos(angle) * distance;
+        var dy = Math.sin(angle) * distance;
+        star.style.transform = "rotate(" + (angle * 180 / Math.PI) + "deg)";
+
+        sky.appendChild(star);
+
+        var duration = rand(800, 1200); // ms
+        var anim = star.animate(
+          [
+            { transform: star.style.transform + " translate(0, 0)", opacity: 0 },
+            { opacity: 1, offset: 0.15 },
+            { opacity: 1, offset: 0.7 },
+            { transform: star.style.transform + " translate(" + dx + "px, " + dy + "px)", opacity: 0 }
+          ],
+          { duration: duration, easing: "ease-out", fill: "forwards" }
+        );
+
+        // Remove from the DOM so nothing lingers ("without a trace").
+        anim.onfinish = function () {
+          if (star.parentNode) star.parentNode.removeChild(star);
+        };
+      }
+
+      // Re-arm with a fresh random gap (20–30s) after each shooting star.
+      function scheduleNext() {
+        var delay = rand(20000, 30000);
+        setTimeout(function () {
+          shootStar();
+          scheduleNext();
+        }, delay);
+      }
+
+      createStars(45);
+      scheduleNext();
+    })();
+  </script>
+</body>
+</html>
