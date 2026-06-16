@@ -161,6 +161,13 @@
       function scheduleNext() {
         setTimeout(function () {
           shootStar();
+          // Once in a while a few cross the sky at the same time.
+          if (Math.random() < 0.3) {
+            var extra = 1 + Math.floor(rand(0, 2)); // 1–2 more
+            for (var i = 0; i < extra; i++) {
+              setTimeout(function () { shootStar(); }, rand(60, 350));
+            }
+          }
           scheduleNext();
         }, nextDelay());
       }
