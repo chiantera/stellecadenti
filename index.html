@@ -127,13 +127,35 @@
         };
       }
 
-      // Re-arm with a fresh random gap (20–30s) after each shooting star.
+      // Falling stars start frequent, then relax to the steady cadence.
+      // Phases run in order; once exhausted we settle on 20–30s forever.
+      var phases = [
+        { min: 3000,  max: 5000,  count: 1 }, // first one within ~5s
+        { min: 5000,  max: 10000, count: 2 }, // then every 5–10s
+        { min: 10000, max: 20000, count: 2 }  // then every 10–20s
+      ];
+      var steady = { min: 20000, max: 30000 }; // then every 20–30s
+      var phaseIndex = 0;
+      var firedInPhase = 0;
+
+      function nextDelay() {
+        if (phaseIndex < phases.length) {
+          var p = phases[phaseIndex];
+          var delay = rand(p.min, p.max);
+          if (++firedInPhase >= p.count) {
+            phaseIndex++;
+            firedInPhase = 0;
+          }
+          return delay;
+        }
+        return rand(steady.min, steady.max);
+      }
+
       function scheduleNext() {
-        var delay = rand(20000, 30000);
         setTimeout(function () {
           shootStar();
           scheduleNext();
-        }, delay);
+        }, nextDelay());
       }
 
       createStars(45);
