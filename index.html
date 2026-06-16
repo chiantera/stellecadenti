@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.25, maximum-scale=10, user-scalable=yes" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Night Sky</title>
   <style>
     html, body {
@@ -12,11 +12,29 @@
       height: 100%;
       background: #000;
       overflow: hidden;
+      /* We handle pinch/scroll ourselves, so suppress native gestures. */
+      touch-action: none;
     }
 
+    /* The star field is larger than the screen and gets scaled on zoom,
+       so zooming out shrinks the stars AND reveals more sky (no margins). */
+    #stars {
+      position: fixed;
+      left: 50%;
+      top: 50%;
+      width: 300vw;
+      height: 300vh;
+      transform: translate(-50%, -50%) scale(1);
+      transform-origin: center center;
+      will-change: transform;
+    }
+
+    /* Shooting stars live on a separate, unscaled overlay pinned to the
+       viewport, so meteors always render crisply at screen scale. */
     #sky {
       position: fixed;
       inset: 0;
+      pointer-events: none;
     }
 
     /* Static, sparse stars */
@@ -64,12 +82,14 @@
   </style>
 </head>
 <body>
+  <div id="stars"></div>
   <div id="sky"></div>
 
   <script>
     (function () {
       "use strict";
 
+      var stars = document.getElementById("stars");
       var sky = document.getElementById("sky");
 
       function rand(min, max) {
@@ -77,6 +97,8 @@
       }
 
       // --- Sparse field of static, gently twinkling stars ---
+      // The field is 3x the viewport in each dimension (9x the area), so we
+      // scale the count up to keep the same sparse density on screen.
       function createStars(count) {
         for (var i = 0; i < count; i++) {
           var s = document.createElement("div");
@@ -87,7 +109,7 @@
           // never all at once.
           s.style.setProperty("--dur", rand(14, 26).toFixed(2) + "s");
           s.style.setProperty("--delay", rand(0, 20).toFixed(2) + "s");
-          sky.appendChild(s);
+          stars.appendChild(s);
         }
       }
 
@@ -172,6 +194,56 @@
         }, nextDelay());
       }
 
+      // --- Custom zoom: pull back to reveal more sky and shrink the stars.
+      // Done in JS so it behaves identically everywhere, including Chrome on
+      // Android (which clamps native pinch-to-zoom-out at width=device-width).
+      var MIN_ZOOM = 0.4;
+      var MAX_ZOOM = 3;
+      var zoom = 1;
+
+      function applyZoom() {
+        stars.style.transform = "translate(-50%, -50%) scale(" + zoom + ")";
+      }
+
+      function setZoom(z) {
+        zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z));
+        applyZoom();
+      }
+
+      // Mouse wheel / trackpad pinch (trackpad pinch arrives as ctrl+wheel).
+      window.addEventListener("wheel", function (e) {
+        e.preventDefault();
+        setZoom(zoom * (1 - e.deltaY * 0.0015));
+      }, { passive: false });
+
+      // Touch pinch.
+      var pinchStartDist = 0;
+      var pinchStartZoom = 1;
+
+      function touchDist(t) {
+        var dx = t[0].clientX - t[1].clientX;
+        var dy = t[0].clientY - t[1].clientY;
+        return Math.sqrt(dx * dx + dy * dy);
+      }
+
+      window.addEventListener("touchstart", function (e) {
+        if (e.touches.length === 2) {
+          pinchStartDist = touchDist(e.touches);
+          pinchStartZoom = zoom;
+        }
+      }, { passive: false });
+
+      window.addEventListener("touchmove", function (e) {
+        if (e.touches.length === 2 && pinchStartDist > 0) {
+          e.preventDefault();
+          setZoom(pinchStartZoom * (touchDist(e.touches) / pinchStartDist));
+        }
+      }, { passive: false });
+
+      window.addEventListener("touchend", function (e) {
+        if (e.touches.length < 2) pinchStartDist = 0;
+      });
+
       // Fullscreen can't be forced on load — browsers require a user
       // gesture. So a click/tap anywhere toggles it. (Esc also exits.)
       function toggleFullscreen() {
@@ -193,7 +265,7 @@
         setTimeout(function () { shootStar(x, y); }, rand(300, 700));
       });
 
-      createStars(45);
+      createStars(400);
       scheduleNext();
     })();
   </script>
