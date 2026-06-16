@@ -58,14 +58,15 @@
       50%                { opacity: 0.15; }
     }
 
-    /* Shooting stars: a bright head with a short tapered tail */
+    /* Shooting stars: a bright head with a tapered tail. Size is per-star
+       via --sz (head diameter) and --tail (tail length). */
     .shooting-star {
       position: absolute;
-      width: 2px;
-      height: 2px;
+      width: var(--sz, 2px);
+      height: var(--sz, 2px);
       border-radius: 50%;
       background: #fff;
-      box-shadow: 0 0 6px 2px rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0 calc(var(--sz, 2px) * 3) calc(var(--sz, 2px) * 0.8) rgba(255, 255, 255, 0.85);
       pointer-events: none;
     }
 
@@ -73,9 +74,9 @@
       content: "";
       position: absolute;
       top: 50%;
-      right: 1px;
-      width: 70px;
-      height: 1px;
+      right: 50%;
+      width: var(--tail, 70px);
+      height: max(1px, calc(var(--sz, 2px) * 0.5));
       transform: translateY(-50%);
       background: linear-gradient(to left, rgba(255, 255, 255, 0.85), transparent);
     }
@@ -113,7 +114,7 @@
         }
       }
 
-      // --- A single shooting star that crosses a small part of the sky ---
+      // --- A single shooting star: random size, speed, and direction ---
       function shootStar(px, py) {
         var star = document.createElement("div");
         star.className = "shooting-star";
@@ -124,28 +125,35 @@
           x = px + rand(-35, 35);
           y = py + rand(-35, 35);
         } else {
-          x = rand(0.05, 0.80) * window.innerWidth;  // leave room to travel
-          y = rand(0.05, 0.70) * window.innerHeight;  // mostly upper portion
+          // Start anywhere on screen.
+          x = rand(0.02, 0.98) * window.innerWidth;
+          y = rand(0.02, 0.98) * window.innerHeight;
         }
         star.style.left = x + "px";
         star.style.top = y + "px";
 
-        // Short, randomized diagonal travel so it only crosses a small span.
-        var distance = rand(120, 220);          // px
-        var angle = rand(15, 45) * Math.PI / 180; // gentle downward-right slope
-        var dx = Math.cos(angle) * distance;
-        var dy = Math.sin(angle) * distance;
-        star.style.transform = "rotate(" + (angle * 180 / Math.PI) + "deg)";
+        // Vary the look: small faint streaks through to big bright ones.
+        var size = rand(1, 4);          // px head diameter
+        var tail = rand(35, 150);       // px tail length
+        star.style.setProperty("--sz", size.toFixed(2) + "px");
+        star.style.setProperty("--tail", tail.toFixed(0) + "px");
+
+        // Come from any direction. The element faces +x (tail trails behind),
+        // so we rotate it and then translate along its local +x axis.
+        var angleDeg = rand(0, 360);
+        var distance = rand(90, 420);   // px — short darts to long sweeps
+        var duration = rand(550, 2400); // ms — fast and slow mixed in
+        var rot = "rotate(" + angleDeg.toFixed(2) + "deg)";
+        star.style.transform = rot;
 
         sky.appendChild(star);
 
-        var duration = rand(800, 1200); // ms
         var anim = star.animate(
           [
-            { transform: star.style.transform + " translate(0, 0)", opacity: 0 },
+            { transform: rot + " translate(0, 0)", opacity: 0 },
             { opacity: 1, offset: 0.15 },
             { opacity: 1, offset: 0.7 },
-            { transform: star.style.transform + " translate(" + dx + "px, " + dy + "px)", opacity: 0 }
+            { transform: rot + " translate(" + distance + "px, 0)", opacity: 0 }
           ],
           { duration: duration, easing: "ease-out", fill: "forwards" }
         );
