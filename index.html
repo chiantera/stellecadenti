@@ -158,6 +158,22 @@
         }, nextDelay());
       }
 
+      // Fullscreen can't be forced on load — browsers require a user
+      // gesture. So a click/tap anywhere toggles it. (Esc also exits.)
+      function toggleFullscreen() {
+        var doc = document;
+        var el = doc.documentElement;
+        var isFs = doc.fullscreenElement || doc.webkitFullscreenElement;
+        if (!isFs) {
+          var req = el.requestFullscreen || el.webkitRequestFullscreen;
+          if (req) req.call(el);
+        } else {
+          var exit = doc.exitFullscreen || doc.webkitExitFullscreen;
+          if (exit) exit.call(doc);
+        }
+      }
+      document.addEventListener("click", toggleFullscreen);
+
       createStars(45);
       scheduleNext();
     })();
