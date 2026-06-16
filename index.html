@@ -27,13 +27,17 @@
       border-radius: 50%;
       background: #fff;
       box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.5);
-      animation: twinkle var(--dur) ease-in-out infinite;
+      opacity: 0.9; /* steady part of the background */
+      animation: dim var(--dur) ease-in-out infinite;
       animation-delay: var(--delay);
     }
 
-    @keyframes twinkle {
-      0%, 100% { opacity: var(--min); }
-      50%      { opacity: var(--max); }
+    /* Stars stay bright almost the whole cycle, with a brief dip to dark
+       once in a while. Starts and ends bright, so nothing looks "missing"
+       on load. */
+    @keyframes dim {
+      0%, 44%, 56%, 100% { opacity: 0.9; }
+      50%                { opacity: 0.15; }
     }
 
     /* Shooting stars: a bright head with a short tapered tail */
@@ -79,10 +83,10 @@
           s.className = "star";
           s.style.left = rand(0, 100) + "%";
           s.style.top = rand(0, 100) + "%";
-          s.style.setProperty("--dur", rand(3, 7).toFixed(2) + "s");
-          s.style.setProperty("--delay", rand(0, 6).toFixed(2) + "s");
-          s.style.setProperty("--min", rand(0.15, 0.35).toFixed(2));
-          s.style.setProperty("--max", rand(0.6, 0.95).toFixed(2));
+          // Long cycles + staggered delays => stars only dim occasionally,
+          // never all at once.
+          s.style.setProperty("--dur", rand(14, 26).toFixed(2) + "s");
+          s.style.setProperty("--delay", rand(0, 20).toFixed(2) + "s");
           sky.appendChild(s);
         }
       }
