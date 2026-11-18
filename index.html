@@ -90,18 +90,18 @@
       top: 0;
       height: 100%;
       border-radius: 0 0 50% 50% / 0 0 35% 35%;
-      filter: blur(10px);
+      filter: blur(8px) brightness(1.2);
       transform-origin: top center;
       -webkit-mask-image: linear-gradient(to right, transparent, #000 30%, #000 70%, transparent);
       mask-image: linear-gradient(to right, transparent, #000 30%, #000 70%, transparent);
       background:
         repeating-linear-gradient(90deg,
-          rgba(255, 255, 255, 0.10) 0 3px, transparent 3px 11px),
+          rgba(255, 255, 255, 0.20) 0 3px, transparent 3px 11px),
         linear-gradient(to bottom,
           transparent 0%,
           var(--top) 18%,
           var(--mid) 50%,
-          rgba(40, 255, 150, 0.25) 75%,
+          rgba(40, 255, 150, 0.50) 75%,
           transparent 100%);
       animation: wave var(--dur) ease-in-out infinite alternate;
     }
@@ -279,9 +279,9 @@
       function createAurora() {
         var aurora = document.getElementById("aurora");
         var curtains = [
-          { x: 2,  w: 40, top: "rgba(200, 60, 255, 0.22)", mid: "rgba(60, 255, 160, 0.42)" },
-          { x: 30, w: 34, top: "rgba(80, 200, 255, 0.18)", mid: "rgba(40, 255, 190, 0.34)" },
-          { x: 55, w: 38, top: "rgba(255, 60, 200, 0.20)", mid: "rgba(90, 255, 120, 0.40)" }
+          { x: 2,  w: 40, top: "rgba(210, 70, 255, 0.50)", mid: "rgba(70, 255, 160, 0.90)" },
+          { x: 30, w: 34, top: "rgba(90, 210, 255, 0.45)", mid: "rgba(50, 255, 200, 0.80)" },
+          { x: 55, w: 38, top: "rgba(255, 70, 210, 0.48)", mid: "rgba(110, 255, 130, 0.88)" }
         ];
         curtains.forEach(function (c) {
           var d = document.createElement("div");
