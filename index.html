@@ -37,6 +37,139 @@
       pointer-events: none;
     }
 
+    /* Nebula: soft colored clouds that bloom fast on load, then drift. */
+    #nebula {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(0.12);
+      animation: bloom 2.6s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
+    }
+
+    @keyframes bloom {
+      0%   { opacity: 0;   transform: scale(0.12); }
+      45%  { opacity: 1; }
+      100% { opacity: 1;   transform: scale(1); }
+    }
+
+    .cloud {
+      position: absolute;
+      border-radius: 50%;
+      mix-blend-mode: screen;
+      animation: cloud-drift var(--dur) ease-in-out infinite alternate;
+    }
+
+    @keyframes cloud-drift {
+      from { transform: translate(0, 0) scale(1); }
+      to   { transform: translate(var(--dx), var(--dy)) scale(var(--sc)); }
+    }
+
+    /* Aurora: wavy curtains across the upper sky, arriving after the nebula. */
+    #aurora {
+      position: fixed;
+      top: 0;
+      left: -15%;
+      width: 130%;
+      height: 50%;
+      pointer-events: none;
+      mix-blend-mode: screen;
+      opacity: 0;
+      -webkit-mask-image: linear-gradient(to bottom, #000 40%, transparent);
+      mask-image: linear-gradient(to bottom, #000 40%, transparent);
+      animation: aurora-in 4s ease-out 2.6s forwards;
+    }
+
+    @keyframes aurora-in {
+      from { opacity: 0; transform: translateX(-12%) scaleY(0.4); }
+      to   { opacity: 1; transform: translateX(0) scaleY(1); }
+    }
+
+    .curtain {
+      position: absolute;
+      top: 0;
+      height: 100%;
+      border-radius: 0 0 50% 50% / 0 0 35% 35%;
+      filter: blur(8px) brightness(1.2);
+      transform-origin: top center;
+      -webkit-mask-image: linear-gradient(to right, transparent, #000 30%, #000 70%, transparent);
+      mask-image: linear-gradient(to right, transparent, #000 30%, #000 70%, transparent);
+      background:
+        repeating-linear-gradient(90deg,
+          rgba(255, 255, 255, 0.20) 0 3px, transparent 3px 11px),
+        linear-gradient(to bottom,
+          transparent 0%,
+          var(--top) 18%,
+          var(--mid) 50%,
+          rgba(40, 255, 150, 0.50) 75%,
+          transparent 100%);
+      animation: wave var(--dur) ease-in-out infinite alternate;
+    }
+
+    @keyframes wave {
+      0%   { transform: skewX(-10deg) translateX(0)   scaleY(0.95); opacity: 0.75; }
+      50%  { transform: skewX(4deg)   translateX(3%)  scaleY(1.08); opacity: 1; }
+      100% { transform: skewX(10deg)  translateX(-2%) scaleY(1);    opacity: 0.8; }
+    }
+
+    /* Planets live inside #stars so they zoom with the field. */
+    .planet {
+      position: absolute;
+      width: var(--size);
+      height: var(--size);
+      opacity: 0;
+      animation:
+        planet-in 3s ease-out var(--in) forwards,
+        planet-drift var(--drift) ease-in-out var(--in) infinite alternate;
+    }
+
+    @keyframes planet-in {
+      to { opacity: 1; }
+    }
+
+    @keyframes planet-drift {
+      from { transform: translate(0, 0); }
+      to   { transform: translate(var(--dx), var(--dy)); }
+    }
+
+    .planet .body {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: radial-gradient(circle at 32% 30%,
+        var(--light) 0%, var(--mid) 40%, var(--dark) 72%, #000 100%);
+      box-shadow:
+        0 0 calc(var(--size) * 0.35) var(--glow),
+        inset calc(var(--size) * -0.18) calc(var(--size) * -0.14)
+          calc(var(--size) * 0.25) rgba(0, 0, 0, 0.85);
+      overflow: hidden;
+    }
+
+    .planet .bands {
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: repeating-linear-gradient(170deg,
+        rgba(255, 255, 255, 0.10) 0 6%, rgba(0, 0, 0, 0.12) 6% 11%,
+        transparent 11% 15%);
+      mix-blend-mode: overlay;
+    }
+
+    .planet .ring {
+      position: absolute;
+      left: -70%;
+      top: 32%;
+      width: 240%;
+      height: 36%;
+      border-radius: 50%;
+      border: calc(var(--size) * 0.05) solid var(--ring);
+      box-shadow: 0 0 calc(var(--size) * 0.08) var(--ring);
+      transform: rotate(-18deg);
+    }
+    .planet .ring.front {
+      clip-path: inset(50% 0 0 0);
+    }
+
     /* Static, sparse stars */
     .star {
       position: absolute;
@@ -83,6 +216,8 @@
   </style>
 </head>
 <body>
+  <div id="nebula"></div>
+  <div id="aurora"></div>
   <div id="stars"></div>
   <div id="sky"></div>
 
@@ -112,6 +247,90 @@
           s.style.setProperty("--delay", rand(0, 20).toFixed(2) + "s");
           stars.appendChild(s);
         }
+      }
+
+      // --- Nebula clouds: x/y in % of viewport, size in vmax ---
+      function createNebula() {
+        var nebula = document.getElementById("nebula");
+        var clouds = [
+          { x: 30, y: 52, s: 55, c: "rgba(140, 40, 255, 0.38)" },
+          { x: 62, y: 66, s: 48, c: "rgba(255, 40, 170, 0.32)" },
+          { x: 48, y: 82, s: 45, c: "rgba(0, 190, 220, 0.24)" },
+          { x: 80, y: 42, s: 40, c: "rgba(40, 70, 255, 0.34)" },
+          { x: 46, y: 60, s: 22, c: "rgba(255, 150, 70, 0.26)" },
+          { x: 12, y: 85, s: 35, c: "rgba(90, 0, 200, 0.30)" }
+        ];
+        clouds.forEach(function (cl) {
+          var d = document.createElement("div");
+          d.className = "cloud";
+          d.style.width = cl.s + "vmax";
+          d.style.height = cl.s + "vmax";
+          d.style.left = "calc(" + cl.x + "% - " + cl.s / 2 + "vmax)";
+          d.style.top = "calc(" + cl.y + "% - " + cl.s / 2 + "vmax)";
+          d.style.background = "radial-gradient(closest-side, " + cl.c + ", transparent)";
+          d.style.setProperty("--dur", rand(25, 45).toFixed(1) + "s");
+          d.style.setProperty("--dx", rand(-6, 6).toFixed(1) + "vmax");
+          d.style.setProperty("--dy", rand(-4, 4).toFixed(1) + "vmax");
+          d.style.setProperty("--sc", rand(0.9, 1.15).toFixed(2));
+          nebula.appendChild(d);
+        });
+      }
+
+      function createAurora() {
+        var aurora = document.getElementById("aurora");
+        var curtains = [
+          { x: 2,  w: 40, top: "rgba(210, 70, 255, 0.50)", mid: "rgba(70, 255, 160, 0.90)" },
+          { x: 30, w: 34, top: "rgba(90, 210, 255, 0.45)", mid: "rgba(50, 255, 200, 0.80)" },
+          { x: 55, w: 38, top: "rgba(255, 70, 210, 0.48)", mid: "rgba(110, 255, 130, 0.88)" }
+        ];
+        curtains.forEach(function (c) {
+          var d = document.createElement("div");
+          d.className = "curtain";
+          d.style.left = c.x + "%";
+          d.style.width = c.w + "%";
+          d.style.setProperty("--top", c.top);
+          d.style.setProperty("--mid", c.mid);
+          d.style.setProperty("--dur", rand(9, 15).toFixed(1) + "s");
+          aurora.appendChild(d);
+        });
+      }
+
+      // The star field is 300% of the viewport, so the visible area at
+      // zoom 1 is roughly 33%–67% in both axes.
+      function createPlanets() {
+        var planets = [
+          { x: 39, y: 57, size: 120, in: 1.2, light: "#ffd9a0", mid: "#d9822b", dark: "#5a2208",
+            glow: "rgba(255, 150, 60, 0.35)", bands: true },
+          { x: 60, y: 41, size: 70, in: 2.4, light: "#f4efe0", mid: "#b9a98a", dark: "#3a3226",
+            glow: "rgba(255, 240, 200, 0.25)", ring: "rgba(230, 210, 170, 0.55)" },
+          { x: 54, y: 61, size: 26, in: 3.6, light: "#bfe6ff", mid: "#3a7bd5", dark: "#0b1d4a",
+            glow: "rgba(80, 160, 255, 0.45)" }
+        ];
+        planets.forEach(function (p) {
+          var el = document.createElement("div");
+          el.className = "planet";
+          el.style.left = p.x + "%";
+          el.style.top = p.y + "%";
+          el.style.setProperty("--size", p.size + "px");
+          el.style.setProperty("--in", p.in + "s");
+          el.style.setProperty("--drift", rand(120, 200).toFixed(0) + "s");
+          el.style.setProperty("--dx", rand(-80, 80).toFixed(0) + "px");
+          el.style.setProperty("--dy", rand(-30, 30).toFixed(0) + "px");
+          el.style.setProperty("--light", p.light);
+          el.style.setProperty("--mid", p.mid);
+          el.style.setProperty("--dark", p.dark);
+          el.style.setProperty("--glow", p.glow);
+
+          var html = "";
+          if (p.ring) {
+            el.style.setProperty("--ring", p.ring);
+            html += '<div class="ring"></div>';
+          }
+          html += '<div class="body">' + (p.bands ? '<div class="bands"></div>' : "") + "</div>";
+          if (p.ring) html += '<div class="ring front"></div>';
+          el.innerHTML = html;
+          stars.appendChild(el);
+        });
       }
 
       // --- A single shooting star: random size, speed, and direction ---
@@ -274,7 +493,10 @@
         setTimeout(function () { shootStar(x, y); }, rand(300, 700));
       });
 
+      createNebula();
+      createAurora();
       createStars(400);
+      createPlanets();
       scheduleNext();
     })();
   </script>
